@@ -1,24 +1,21 @@
 const Discord = require('discord.js');
 const axios = require('axios');
 const express = require('express');
-require('dotenv').config(); // to load variables from .env file into process.env
-
 const app = express();
 app.use(express.json());
 
 const bot = new Discord.Client();
-const webhookUrl = process.env.WEBHOOK_URL; // replace with your webhook URL
-const channelID = process.env.DISCORD_CHANNEL_ID; // replace with your channel ID
+const webhookUrl = process.env.WEBHOOK_URL;
+const channelID = process.env.CHANNEL_ID;
 
 bot.on('ready', () => {
   console.log('Bot is ready');
 });
 
 bot.on('message', msg => {
-  console.log('Message received on Discord');
+  console.log('Received a message');
   if (msg.channel.id === channelID && msg.author.bot && msg.attachments.first()) {
-    console.log('Sending image to Glide');
-    // Replace 'http://example.com/receiveImage' with your Glide API endpoint
+    console.log('Conditions met, sending image to Glide');
     axios.post('http://example.com/receiveImage', {
       imageUrl: msg.attachments.first().url
     })
@@ -28,10 +25,12 @@ bot.on('message', msg => {
     .catch(error => {
       console.error('Error sending image to Glide:', error);
     });
+  } else {
+    console.log('Conditions not met, ignoring message');
   }
 });
 
-bot.login(process.env.BOT_TOKEN);
+bot.login(process.env.BOT_TOKEN).catch(error => console.error('Error logging in bot:', error));
 
 app.post('/sendDiscordMessage', (req, res) => {
   console.log('Received POST from Glide');
@@ -60,17 +59,7 @@ app.post('/sendDiscordMessage', (req, res) => {
     res.sendStatus(response.status);
   })
   .catch(error => {
-    if (error.response) {
-      console.log('Error response from Discord:', error.response.status);
-      console.log(error.response.data);
-      console.log(error.response.headers);
-      res.sendStatus(error.response.status);
-    } else if (error.request) {
-      console.log('Error request:', error.request);
-    } else {
-      console.log('Error:', error.message);
-    }
-    console.log('Error config:', error.config);
+    console.error('Error sending message to Discord:', error);
     res.sendStatus(500);
   });
 });
